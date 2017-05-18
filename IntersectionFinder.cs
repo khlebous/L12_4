@@ -95,7 +95,7 @@ namespace discs
             double distanceBetweenCentrees = this.Center.Distance(other.Center);
             if (distanceBetweenCentrees > this.Radius + other.Radius)
                 return IntersectionType.Disjoint;
-            if (distanceBetweenCentrees <= Math.Max(this.Radius,other.Radius) - Math.Min(this.Radius, other.Radius))
+            if (distanceBetweenCentrees <= Math.Max(this.Radius, other.Radius) - Math.Min(this.Radius, other.Radius))
             {
                 if (this.Radius > other.Radius)
                     return IntersectionType.Contains;
@@ -153,6 +153,45 @@ namespace discs
             /*
              * uzupełnij
              */
+            if (disks.Length == 1)
+                return disks[0].Center;
+            int n = disks.Length;
+            List<Point> list = new List<Point>();
+
+            for (int i = 0; i < n; i++)
+            {
+                for (int j = i + 1; j < n; j++)
+                {
+                    IntersectionType it = disks[i].GetIntersectionType(disks[j], out Point[] crossingPoints);
+                    if (it == IntersectionType.Disjoint)
+                        return null;
+                    if (it == IntersectionType.Identical || it == IntersectionType.IsContained)
+                        list.Add(disks[i].Center);
+                    if (it == IntersectionType.Contains)
+                        list.Add(disks[j].Center);
+                    if(crossingPoints.Length>0)
+                    {
+                        for (int k = 0; k < crossingPoints.Length; k++)
+                            list.Add(crossingPoints[k]);
+                    }
+                }
+            }
+            
+            for(int i=0; i<list.Count; i++)
+            {
+                bool whetherAllDisksContsinsPoint = true;
+                for(int j=0; j<n; j++)
+                {
+                    if(!disks[j].Contains(list[i]))
+                    {
+                        whetherAllDisksContsinsPoint = false;
+                        break;
+                    }
+                }
+                if (whetherAllDisksContsinsPoint)
+                    return list[i];
+            }
+
             return null;
         }
 
