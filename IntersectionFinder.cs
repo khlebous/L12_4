@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace discs
 {
@@ -157,7 +158,6 @@ namespace discs
                 return disks[0].Center;
             int n = disks.Length;
             List<Point> list = new List<Point>();
-
             for (int i = 0; i < n; i++)
             {
                 for (int j = i + 1; j < n; j++)
@@ -165,35 +165,36 @@ namespace discs
                     IntersectionType it = disks[i].GetIntersectionType(disks[j], out Point[] crossingPoints);
                     if (it == IntersectionType.Disjoint)
                         return null;
-                    if (it == IntersectionType.Identical || it == IntersectionType.IsContained)
-                        list.Add(disks[i].Center);
-                    if (it == IntersectionType.Contains)
-                        list.Add(disks[j].Center);
-                    if(crossingPoints.Length>0)
+                    else if (it == IntersectionType.Contains)
+                        list.Add(new Point(disks[j].Center.X + disks[j].Radius, disks[j].Center.Y));
+                    else if (it == IntersectionType.IsContained)
+                        list.Add(new Point(disks[i].Center.X + disks[i].Radius, disks[i].Center.Y));
+                    else if (it == IntersectionType.Identical)
+                        list.Add(new Point(disks[i].Center.X + disks[i].Radius, disks[i].Center.Y));
+                    else if (it == IntersectionType.Touches)
+                        list.Add(crossingPoints[0]);
+                    else
                     {
-                        for (int k = 0; k < crossingPoints.Length; k++)
-                            list.Add(crossingPoints[k]);
+                        Disk diskWithCenterOnLeft = disks[i].Center.IsRightOf(disks[j].Center) ? disks[j] : disks[i];
+                        Disk diskWithCenterOnRight = disks[i].Center.IsRightOf(disks[j].Center) ? disks[i] : disks[j];
+                        // sposrod 2 punktow przeciecia wybieramy ten, ktory jest "bardziej naprawo"
+                        Point p = crossingPoints[0].IsRightOf(crossingPoints[1]) ? crossingPoints[0] : crossingPoints[1];
+                        // pTmp - pkt z "diskWithCenterOnLeft" ktory jest "najbardziej prawy" w calym dysku
+                        Point pTmp = new Point(diskWithCenterOnLeft.Center.X + diskWithCenterOnLeft.Radius, diskWithCenterOnLeft.Center.Y);
+                        // wypieramy z "p" i "pTmp" ten, ktory jest "bardziej naprawo"
+                        if (diskWithCenterOnRight.Contains(pTmp))
+                            list.Add(p.IsRightOf(pTmp) ? p : pTmp);
+                        else
+                            list.Add(p);
                     }
                 }
             }
-            
-            for(int i=0; i<list.Count; i++)
-            {
-                bool whetherAllDisksContsinsPoint = true;
-                for(int j=0; j<n; j++)
-                {
-                    if(!disks[j].Contains(list[i]))
-                    {
-                        whetherAllDisksContsinsPoint = false;
-                        break;
-                    }
-                }
-                if (whetherAllDisksContsinsPoint)
-                    return list[i];
-            }
-
-            return null;
+            //posort po x
+            list = list.OrderBy(p => p.X).ThenBy(p => p.Y).ToList();
+            for (int j = 0; j < n; j++)
+                if (!disks[j].Contains(list[0]))
+                    return null;
+            return list[0];
         }
-
     }
 }
